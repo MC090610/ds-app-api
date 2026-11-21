@@ -5,6 +5,7 @@
 - Root configuration: `.gitignore`, `.oxfmtrc.json`, `.oxlintrc.json`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `rspack.config.ts`
 - Documentation: `README.md`, `README.en.md`, `README.zh-CN.md`, `ARCHITECTURE.md`, `ANDROID.md`, `NOTICE.md`, `LICENSE`, `LICENSES/`
 - Workflow: `.github/workflows/pages.yml`
+- Release workflow: `.github/workflows/release.yml`
 - Web source: `src/`
 - Build and helper scripts: `scripts/`
 - Android source and Gradle wrapper: `android/` except ignored build/local/signing files

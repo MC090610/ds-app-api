@@ -1,0 +1,129 @@
+name: Build and Publish Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: true
+        default: v0.3.0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 12.6.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+
+      - name: Install Android build dependencies
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate source
+        run: |
+          pnpm type
+          pnpm lint
+          pnpm test:auth
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: echo "value=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release tag
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="$INPUT_TAG"
+          fi
+          if [ "$tag" != "v${{ steps.version.outputs.value }}" ]; then
+            echo "Release tag $tag does not match package version ${{ steps.version.outputs.value }}" >&2
+            exit 1
+          fi
+
+      - name: Build static web and HTML package
+        run: |
+          pnpm build
+          pnpm package:html
+
+      - name: Build Android APK
+        shell: bash
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          version="${{ steps.version.outputs.value }}"
+          apk="release/DS-API-Android-${version}.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$apk"
+          (
+            cd release
+            sha256sum "DS-API-Android-${version}.apk" > "DS-API-Android-${version}.apk.sha256"
+          )
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          target_commitish: ${{ github.sha }}
+          name: DS-API v${{ steps.version.outputs.value }}
+          body: |
+            CI-built DS-API release.
+
+            Assets:
+            - `DS-API-Android-<version>.apk`: CI-built Android APK
+            - `DS-API-Web-<version>.zip`: standalone static HTML package
+            - `*.sha256`: SHA-256 checksums
+
+            This is an independent client and is not an official DeepSeek product.
+          files: |
+            release/DS-API-Android-${{ steps.version.outputs.value }}.apk
+            release/DS-API-Android-${{ steps.version.outputs.value }}.apk.sha256
+            release/DS-API-Web-${{ steps.version.outputs.value }}.zip
+            release/DS-API-Web-${{ steps.version.outputs.value }}.zip.sha256
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          make_latest: true

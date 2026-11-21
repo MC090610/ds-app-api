@@ -38,6 +38,7 @@ Android 客户端等功能。
 | `scripts/web-auth-server.mjs` | 本地网页登录助手和余额接口 |
 | `scripts/test-web-auth.mjs` | 开放平台登录、API Key 和余额协议 mock 测试 |
 | `.github/workflows/pages.yml` | GitHub Pages 自动构建与发布 |
+| `.github/workflows/release.yml` | CI 构建 Android APK、HTML ZIP 并发布到 GitHub Release |
 
 更完整的模块边界、数据流和认证流程见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
@@ -115,6 +116,9 @@ release/DS-API-Web-<version>.zip.sha256
 ```
 
 该目录只包含运行网页所需的 HTML、CSS、JavaScript、字体和许可证文件，不包含 Node.js 依赖、源码或本地配置。
+
+GitHub Actions 的 `Build and Publish Release` 工作流会在 Ubuntu runner 上同时构建 Android APK
+和 HTML ZIP，校验 tag 与 `package.json` 版本一致后自动创建 Release 并上传全部资产。
 
 ## 数据与安全
 
