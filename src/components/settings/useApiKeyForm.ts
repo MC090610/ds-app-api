@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ApiError, verifyApiKey } from '../../services/api/client.js'
 import { classifyApiError } from '../../services/api/errors.js'
 import { setApiKey } from '../../services/settings.js'
+import { markApiKeyValid } from '../../services/apiKeyStatus.js'
 import { useTranslate } from '../../i18n/index.js'
 
 /** 输入 API Key 后先用 GET /models 校验，通过才保存 */
@@ -37,6 +38,7 @@ export const useApiKeyForm = (onSaved?: () => void) => {
     try {
       await verifyApiKey(apiKey)
       setApiKey(apiKey)
+      markApiKeyValid()
       setValue('')
       onSaved?.()
     } catch (e) {

@@ -108,6 +108,23 @@
   padding: 0 13px;
 }
 
+.platformAccountCell {
+  flex-wrap: wrap;
+}
+
+.platformAccountCell .text {
+  flex: 1 0 100%;
+  padding-right: 0;
+}
+
+.accountActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
 .locationCell {
   flex-wrap: wrap;
 }
@@ -209,6 +226,80 @@
   flex-direction: column;
   gap: 8px;
   padding-bottom: 4px;
+}
+
+.accountLoginButton {
+  align-self: stretch;
+}
+
+.accountLoginStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ds-control-height-m);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  border-radius: 4096px;
+  color: var(--dsw-alias-state-success-primary);
+  background: rgba(34, 197, 94, 0.1);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.accountForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--ds-control-height-xl);
+    padding: 0 16px;
+    border: 1px solid var(--dsw-alias-border-l2);
+    border-radius: 22px;
+    outline: none;
+    background: transparent;
+    color: var(--dsw-alias-label-primary);
+    font: inherit;
+
+    &:focus {
+      border-color: var(--dsw-alias-brand-primary);
+    }
+
+    &::placeholder {
+      color: var(--dsw-alias-label-caption);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+    }
+  }
+}
+
+.accountLoginHint {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.accountLoginDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--dsw-alias-label-caption);
+  font-size: 12px;
+  line-height: 18px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--dsw-alias-border-l2);
+  }
 }
 
 .apiKeySaved,

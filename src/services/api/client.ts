@@ -16,6 +16,12 @@ export const API_ORIGIN = __API_ORIGIN__
 const ANTHROPIC_BASE_URL = `${API_ORIGIN}/anthropic/v1`
 /** 引用 Files API 上传的图片、调用 Anthropic 兼容 Files API 时必须携带 */
 const FILES_BETA = 'files-api-2025-04-14'
+const unauthorizedListeners = new Set<(apiKey?: string) => void>()
+
+export const addApiUnauthorizedListener = (listener: (apiKey?: string) => void) => {
+  unauthorizedListeners.add(listener)
+  return () => unauthorizedListeners.delete(listener)
+}
 
 export type ApiErrorKind =
   /** 非 2xx 响应 */
@@ -78,6 +84,18 @@ export const request = async (url: string, init: RequestInit): Promise<Response>
     throw new ApiError('network', error instanceof Error ? error.message : String(error))
   }
   if (!response.ok) {
+    if (response.status === 401) {
+      const headers = new Headers(init.headers)
+      const authorization = headers.get('Authorization')
+      const rejectedKey =
+        headers.get('x-api-key') ??
+        (authorization?.toLowerCase().startsWith('bearer ')
+          ? authorization.slice(7).trim()
+          : undefined)
+      for (const listener of unauthorizedListeners) {
+        listener(rejectedKey)
+      }
+    }
     throw await readErrorResponse(response)
   }
   return response

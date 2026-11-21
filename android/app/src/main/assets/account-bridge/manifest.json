@@ -1,0 +1,22 @@
+{
+  "manifest_version": 2,
+  "name": "DeepSeek Account Bridge",
+  "version": "1.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "deepseek-account-bridge@local"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://platform.deepseek.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "permissions": [
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "geckoViewAddons"
+  ]
+}

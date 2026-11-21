@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDarkOutline16,
   IconDataOutline16,
@@ -7,6 +7,7 @@ import {
   IconFollowsystemOutline16,
   IconLightOutline16,
   IconSettingsOutline16,
+  IconRefreshOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
 import {
@@ -34,6 +35,8 @@ import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { openPlatformPage } from '../../services/platformAccount.js'
+import { refreshPlatformBalance, usePlatformBalance } from '../../services/platformBalance.js'
 import styles from './Settings.module.css'
 
 /**
@@ -104,6 +107,7 @@ const SettingsContent = () => {
           ) : (
             <>
               <ApiKeyField editor={apiKeyEditor} />
+              <PlatformAccount />
               <ImportHistory historyImport={historyImport} disabled={historyBusy} />
               <ExportHistory disabled={historyBusy} />
               <SettingCell
@@ -129,6 +133,89 @@ const SettingsContent = () => {
       {historyImport.file ? <ImportConfirm historyImport={historyImport} /> : null}
       {historyDelete.opened ? <DeleteAllConfirm historyDelete={historyDelete} /> : null}
     </>
+  )
+}
+
+const PlatformAccount = () => {
+  const t = useTranslate()
+  const locale = useSettings((state) => state.locale)
+  const status = usePlatformBalance((state) => state.status)
+  const wallets = usePlatformBalance((state) => state.wallets)
+  const error = usePlatformBalance((state) => state.error)
+
+  useEffect(() => {
+    void refreshPlatformBalance()
+    const refreshOnReturn = () => void refreshPlatformBalance()
+    window.addEventListener('focus', refreshOnReturn)
+    window.addEventListener('deepseek-platform-page-returned', refreshOnReturn)
+    return () => {
+      window.removeEventListener('focus', refreshOnReturn)
+      window.removeEventListener('deepseek-platform-page-returned', refreshOnReturn)
+    }
+  }, [])
+
+  const amount = (currency: string, value: string) => {
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'narrowSymbol',
+      }).format(Number(value))
+    } catch {
+      return `${currency} ${value}`
+    }
+  }
+  const balance = wallets
+    .map(
+      (wallet) =>
+        `${t('platformRechargeBalance')} ${amount(wallet.currency, wallet.recharge)} · ${t(
+          'platformBonusBalance'
+        )} ${amount(wallet.currency, wallet.bonus)}`
+    )
+    .join(' / ')
+  const description =
+    status === 'ready'
+      ? balance
+      : status === 'loading'
+        ? t('platformBalanceLoading')
+        : status === 'unauthenticated'
+          ? t('platformBalanceLogin')
+          : status === 'error'
+            ? t('platformBalanceLoadFailed', { message: error ?? '' })
+            : t('platformBalanceLoading')
+
+  return (
+    <SettingCell
+      label={t('platformBalance')}
+      description={description}
+      status={null}
+      className={styles.platformAccountCell}
+      action={
+        <div className={styles.accountActions}>
+          <Button
+            variant="outlined"
+            size="m"
+            className={styles.cellButton}
+            disabled={status === 'loading'}
+            onClick={() => void refreshPlatformBalance()}
+          >
+            <IconRefreshOutline16 />
+            {t('platformRefresh')}
+          </Button>
+          <Button
+            variant="outlined"
+            size="m"
+            className={styles.cellButton}
+            onClick={() => openPlatformPage('usage')}
+          >
+            {t('platformUsage')}
+          </Button>
+          <Button size="m" className={styles.cellButton} onClick={() => openPlatformPage('top_up')}>
+            {t('platformTopUp')}
+          </Button>
+        </div>
+      }
+    />
   )
 }
 

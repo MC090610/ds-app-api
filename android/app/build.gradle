@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+}
+
+def webDist = rootProject.file('../dist')
+def syncedWebAssets = layout.buildDirectory.dir('generated/webAssets')
+
+android {
+    namespace 'com.deepseek.chat.local'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.deepseek.chat.local'
+        minSdk 29
+        targetSdk 36
+        versionCode 8
+        versionName '0.3.0'
+        ndk {
+            abiFilters 'arm64-v8a', 'x86_64'
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(syncedWebAssets)
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ''
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.mozilla.geckoview:geckoview:145.0.20251124145406'
+}
+
+def syncWebAssets = tasks.register('syncWebAssets', Sync) {
+    from(webDist)
+    into(syncedWebAssets.map { it.dir('web') })
+}
+
+tasks.named('preBuild').configure {
+    dependsOn syncWebAssets
+}

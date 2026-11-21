@@ -1,11 +1,39 @@
+# Dependencies and package-manager caches
 node_modules/
-dist/
-build/
 .pnpm-store/
-.cache/
+
+# Build output and local browser profiles
+dist/
+dist-*/
+build/
+tmp/
+artifacts/
+release/
+coverage/
 *.log
-.DS_Store
+
+# Android and Gradle local state
+android/.gradle/
+android/local.properties
+android/**/build/
+.gradle/
+
+# Signing material and credentials
+*.jks
+*.keystore
+keystore.properties
+signing.properties
 .env
 .env.*
 !.env.example
-tmp/
+
+# Mobile package outputs
+*.apk
+*.aab
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
