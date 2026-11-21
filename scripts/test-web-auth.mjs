@@ -101,22 +101,35 @@ await new Promise((resolve, reject) => {
   web.listen(0, '127.0.0.1', resolve)
 })
 const webOrigin = `http://127.0.0.1:${web.address().port}`
+const staticWebOrigin = 'https://mc090610.github.io'
 
 try {
+  const preflight = await fetch(`${webOrigin}/__auth/start`, {
+    method: 'OPTIONS',
+    headers: {
+      origin: staticWebOrigin,
+      'access-control-request-method': 'POST',
+      'access-control-request-private-network': 'true',
+    },
+  })
+  assert.equal(preflight.status, 204)
+  assert.equal(preflight.headers.get('access-control-allow-origin'), staticWebOrigin)
+  assert.equal(preflight.headers.get('access-control-allow-private-network'), 'true')
+
   const started = await fetch(`${webOrigin}/__auth/start`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      origin: webOrigin,
+      origin: staticWebOrigin,
     },
     body: JSON.stringify({ locale: 'zh-CN' }),
   }).then((response) => response.json())
 
   let result
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    result = await fetch(`${webOrigin}/__auth/status?id=${started.attemptId}`).then((response) =>
-      response.json()
-    )
+    result = await fetch(`${webOrigin}/__auth/status?id=${started.attemptId}`, {
+      headers: { origin: staticWebOrigin },
+    }).then((response) => response.json())
     if (result.status !== 'pending') break
     await new Promise((resolve) => setTimeout(resolve, 10))
   }
@@ -132,14 +145,16 @@ try {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      origin: webOrigin,
+      origin: staticWebOrigin,
     },
     body: JSON.stringify({ page: 'top_up' }),
   })
   assert.equal(opened.status, 200)
   assert.equal(openedPlatformPage, 'top_up')
 
-  const balance = await fetch(`${webOrigin}/__platform/balance`).then((response) => response.json())
+  const balance = await fetch(`${webOrigin}/__platform/balance`, {
+    headers: { origin: staticWebOrigin },
+  }).then((response) => response.json())
   assert.deepEqual(balance.wallets, [
     {
       currency: 'CNY',

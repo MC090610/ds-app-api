@@ -1,5 +1,5 @@
 import { showToast } from '../components/base/toastState.js'
-import { supportsWebAccountLogin } from './accountLogin.js'
+import { supportsWebAccountLogin, webAuthEndpoint } from './accountLogin.js'
 
 export type PlatformPage = 'usage' | 'top_up'
 
@@ -12,8 +12,10 @@ export const openPlatformPage = (page: PlatformPage) => {
     return
   }
   if (supportsWebAccountLogin()) {
-    void fetch('/__platform/open', {
+    void fetch(webAuthEndpoint('/__platform/open'), {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ page }),
     })

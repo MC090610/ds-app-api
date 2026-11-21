@@ -1,9 +1,20 @@
 const wait = (milliseconds: number) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds))
 
+const LOCAL_AUTH_ORIGIN = 'http://127.0.0.1:8090'
+
+export const WEB_AUTH_HELPER_UNAVAILABLE = 'WEB_AUTH_HELPER_UNAVAILABLE'
+
 export const supportsWebAccountLogin = () =>
-  (location.hostname === 'localhost' || location.hostname === '127.0.0.1') &&
-  location.protocol === 'http:'
+  location.protocol === 'http:' || location.protocol === 'https:'
+
+export const usesRemoteWebAuthHelper = () =>
+  supportsWebAccountLogin() &&
+  location.hostname !== 'localhost' &&
+  location.hostname !== '127.0.0.1'
+
+export const webAuthEndpoint = (path: string) =>
+  usesRemoteWebAuthHelper() ? `${LOCAL_AUTH_ORIGIN}${path}` : path
 
 const readJson = async <T>(response: Response): Promise<T> => {
   const body = (await response.json()) as T & { message?: string }
@@ -24,19 +35,27 @@ type StatusResponse =
   | { status: 'missing' }
 
 export const loginWithWebAccount = async (locale: string): Promise<string> => {
-  const start = await readJson<StartResponse>(
-    await fetch('/__auth/start', {
+  let response: Response
+  try {
+    response = await fetch(webAuthEndpoint('/__auth/start'), {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ locale }),
     })
-  )
+  } catch {
+    throw new Error(WEB_AUTH_HELPER_UNAVAILABLE)
+  }
+  const start = await readJson<StartResponse>(response)
   const deadline = Date.now() + 10 * 60 * 1000
   while (Date.now() < deadline) {
     await wait(1200)
     const result = await readJson<StatusResponse>(
-      await fetch(`/__auth/status?id=${encodeURIComponent(start.attemptId)}`, {
+      await fetch(webAuthEndpoint(`/__auth/status?id=${encodeURIComponent(start.attemptId)}`), {
         cache: 'no-store',
+        mode: 'cors',
+        credentials: 'omit',
       })
     )
     if (result.status === 'ready') {

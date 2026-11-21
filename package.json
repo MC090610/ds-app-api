@@ -1,6 +1,6 @@
 {
   "name": "ds-api-chat",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "DS-API 网页与 Android 聊天客户端。",
   "license": "GPL-3.0-only",
   "private": true,

@@ -107,6 +107,9 @@ export const zh = {
   accountLoginInvalidHint: '当前 API Key 已被删除或停用，请重新获取。',
   accountLoginReadyHint: 'API Key 当前有效，可以直接开始对话。',
   accountLoginHint: '将在开放平台官方页面登录，完成后自动创建并保存 API Key。',
+  accountLoginHelperHint:
+    'GitHub Pages 为纯静态站点。自动登录需先在电脑运行 pnpm web 启动本地登录助手。',
+  accountLoginHelperUnavailable: '未检测到本机登录助手，请先在电脑运行 pnpm web。',
   accountOrApiKey: '或使用已有 API Key',
   accountLoginSuccess: '登录成功，API Key 已自动创建',
   accountLoginFailed: '账号登录失败：{message}',

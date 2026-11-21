@@ -7,7 +7,12 @@ import { useIsMobile } from '../../app/viewport.js'
 import { IconButton } from '../base/IconButton.js'
 import { useApiKeyForm } from './useApiKeyForm.js'
 import { useTranslate } from '../../i18n/index.js'
-import { loginWithWebAccount, supportsWebAccountLogin } from '../../services/accountLogin.js'
+import {
+  loginWithWebAccount,
+  supportsWebAccountLogin,
+  usesRemoteWebAuthHelper,
+  WEB_AUTH_HELPER_UNAVAILABLE,
+} from '../../services/accountLogin.js'
 import { Button } from '../base/Button.js'
 import { showToast } from '../base/toastState.js'
 import { refreshPlatformBalance } from '../../services/platformBalance.js'
@@ -32,6 +37,7 @@ export const ApiKeyField = ({ editor }: { editor: ApiKeyEditor }) => {
   const nativeAccountLogin =
     typeof window !== 'undefined' && typeof window.DeepSeekAndroid?.loginWithDeepSeek === 'function'
   const webAccountLogin = supportsWebAccountLogin()
+  const remoteWebAuthHelper = usesRemoteWebAuthHelper()
   const accountLoginAvailable = nativeAccountLogin || webAccountLogin
   const [accountLoginBusy, setAccountLoginBusy] = useState(false)
   const [accountLoginError, setAccountLoginError] = useState<string | null>(null)
@@ -63,7 +69,9 @@ export const ApiKeyField = ({ editor }: { editor: ApiKeyEditor }) => {
       void refreshPlatformBalance()
       showToast({ key: 'accountLoginSuccess' })
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const rawMessage = error instanceof Error ? error.message : String(error)
+      const message =
+        rawMessage === WEB_AUTH_HELPER_UNAVAILABLE ? t('accountLoginHelperUnavailable') : rawMessage
       setAccountLoginError(message)
       showToast({
         key: 'accountLoginFailed',
@@ -116,7 +124,9 @@ export const ApiKeyField = ({ editor }: { editor: ApiKeyEditor }) => {
                 ? t('accountLoginInvalidHint')
                 : keyValid
                   ? t('accountLoginReadyHint')
-                  : t('accountLoginHint')}
+                  : remoteWebAuthHelper
+                    ? t('accountLoginHelperHint')
+                    : t('accountLoginHint')}
             </div>
             {!apiKey && !editing ? (
               <div className={styles.accountLoginDivider}>{t('accountOrApiKey')}</div>

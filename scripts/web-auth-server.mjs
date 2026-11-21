@@ -195,6 +195,7 @@ export const createWebAuthServer = ({
   pollIntervalMs = 1_000,
   loginTimeoutMs = 10 * 60 * 1000,
   rootDirectory = path.join(root, 'tmp'),
+  allowedWebOrigins = ['https://mc090610.github.io'],
 } = {}) => {
   const attempts = new Map()
   let cachedPlatformToken = null
@@ -272,12 +273,31 @@ export const createWebAuthServer = ({
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', `http://${request.headers.host ?? '127.0.0.1'}`)
+      const callbackOrigin = localOrigin(request)
+      const requestOrigin = request.headers.origin
+      const allowedOrigin =
+        requestOrigin === undefined ||
+        requestOrigin === callbackOrigin ||
+        allowedWebOrigins.includes(requestOrigin)
+      if (!allowedOrigin) {
+        sendJson(response, 403, { message: '账号登录请求来源无效' })
+        return
+      }
+      if (requestOrigin !== undefined) {
+        response.setHeader('Access-Control-Allow-Origin', requestOrigin)
+        response.setHeader('Vary', 'Origin')
+        response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        response.setHeader('Access-Control-Allow-Headers', 'content-type')
+        response.setHeader('Access-Control-Allow-Private-Network', 'true')
+        response.setHeader('Access-Control-Max-Age', '600')
+      }
+      if (request.method === 'OPTIONS') {
+        response.writeHead(204)
+        response.end()
+        return
+      }
 
       if (request.method === 'POST' && url.pathname === '/__auth/start') {
-        const callbackOrigin = localOrigin(request)
-        if (request.headers.origin !== callbackOrigin) {
-          throw new Error('账号登录请求来源无效')
-        }
         const requestBody = await readJson(request)
         const attemptId = randomUUID()
         const session = await platformSessionFactory({
@@ -316,10 +336,6 @@ export const createWebAuthServer = ({
       }
 
       if (request.method === 'POST' && url.pathname === '/__platform/open') {
-        const callbackOrigin = localOrigin(request)
-        if (request.headers.origin !== callbackOrigin) {
-          throw new Error('开放平台页面请求来源无效')
-        }
         const requestBody = await readJson(request)
         const page = requestBody.page === 'usage' ? 'usage' : 'top_up'
         await platformPageOpener({

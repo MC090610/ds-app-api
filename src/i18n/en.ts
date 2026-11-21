@@ -113,6 +113,10 @@ export const en = {
   accountLoginReadyHint: 'Your API Key is active and ready for chat.',
   accountLoginHint:
     'Sign in on the official platform page. An API Key is created and saved automatically.',
+  accountLoginHelperHint:
+    'GitHub Pages is static. Run `pnpm web` on your computer to start the local sign-in helper.',
+  accountLoginHelperUnavailable:
+    'The local sign-in helper is not running. Run `pnpm web` on your computer first.',
   accountOrApiKey: 'Or use an existing API Key',
   accountLoginSuccess: 'Signed in and created an API Key',
   accountLoginFailed: 'Sign-in failed: {message}',

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supportsWebAccountLogin } from './accountLogin.js'
+import { supportsWebAccountLogin, webAuthEndpoint } from './accountLogin.js'
 
 export type WalletBalance = {
   currency: string
@@ -88,8 +88,10 @@ export const refreshPlatformBalance = async (): Promise<void> => {
   }
 
   try {
-    const response = await fetch('/__platform/balance', {
+    const response = await fetch(webAuthEndpoint('/__platform/balance'), {
       cache: 'no-store',
+      mode: 'cors',
+      credentials: 'omit',
       signal: AbortSignal.timeout(30_000),
     })
     const result = (await response.json()) as BalanceResult
